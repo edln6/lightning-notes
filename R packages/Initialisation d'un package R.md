@@ -59,7 +59,7 @@ Dans le .onAttach, on va plutôt mettre des messages informatifs à l'utilisateu
 Sachant qu'un utilisateur de R pourrait appeler un package sans l'attacher avec `::` (exemple : `rjd3x13::x13(AirPassengers)`), ne faudrait-il pas mettre la condition sur la version de Java (`Java >= 21`) dans le `.onLoad()` et non le `.onAttach()` et de mettre une erreur ?
 
 1) Non pour l'erreur car sinon, un utilisateur ne pourrait pas installer le package sans avoir `Java >= 21` et ce n'est pas ce que l'on veut. On veut que l'utilisateur puisse quand même installer le package et si besoin mettre à jour son Java a posteriori. Aussi cela empêcherai les checks du CRAN.
-2) Non pour le `.onLoad()` car (comme mentionné [ici](https://r-pkgs.org/code.html#sec-code-onLoad-onAttach)), le but du `.onLoad()` n'est pas d'être verbeux. Si qqch en fonctionne pas, l'utilisateur est prévenu dans le `.onAttach()` avec le `packageStartupMessage()` et se rappeler que `::` est une forme avancé et pas forcément pour les débutants.
+2) Oui pour le `.onLoad()` car n'importe quell utilisateur doit pouvoir utiliser le package (avec `library()` ou avec `::`.
 
 ## Dépendances
 
@@ -67,7 +67,7 @@ La page du livre R packages est bien développée à ce sujet : https://r-pkgs.o
 
 ### Imports vs Depends vs Suggests vs LinkingTo vs Enhances
 
-Il existe 4 moyen de déclarer des dépendances en R. 
+Il existe 5 moyens de déclarer des dépendances en R. 
 
 - **Depends** : liste les dépendances qui **seront attachées**. A priori, il n'y a **aucune raison** de mettre des packages dans cette section (on privilégiera la section Imports).
 - **Imports** : liste les dépendances dont l'utilisateur a besoin pour faire fonctionner le package. Ces packages **sont installés et chargés** ("Loading") en même temps que le package principal.
@@ -77,7 +77,9 @@ Il existe 4 moyen de déclarer des dépendances en R.
 
 ### Dans le zzz.R
 
-Par défault, les packages dépendances (dans la section **Imports** du fichier DESCRIPTION) sont chargés ("Loading") lors du chargement du package principal. Il n'y a donc pas besoin de recharger à la main un package dépendance. Si une dépendance est manquante R le signifiera à l'utilisateur avec  le message :
+Par défault, les packages dépendances (dans la section **Imports** du fichier DESCRIPTION) sont chargés ("Loaded") lors du chargement du package principal (mais uniquement dans certaines conditions, voir [discussion 161](https://github.com/rjdverse/rjd3toolkit/discussions/161)). Il n'y a donc pas besoin de recharger à la main un package dépendance. 
+
+Si une dépendance est manquante R le signifiera à l'utilisateur avec  le message :
 
 ```
 Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) : 
@@ -111,6 +113,11 @@ Dans le fichier zzz.R, on retrouve :
 #' @importFrom rjd3toolkit get_java_version minimal_java_version
 #' @importFrom rjd3toolkit reload_dictionaries
 .onLoad <- function(libname, pkgname) {
+	# Chargement des packages dépendances
+	if (!requireNamespace("rjd3toolkit", quietly = TRUE)) {
+		stop("Loading {rjd3toolkit} failed", call. = FALSE)
+	}
+	
     # Chargement des classes Java
     jars_inst <- file.path(libname, pkgname, "inst", "java") |>
         list.files(pattern = "\\.jar$", full.names = TRUE, all.files = TRUE)
@@ -122,12 +129,7 @@ Dans le fichier zzz.R, on retrouve :
     if (!result) {
         stop("Loading java packages failed", call. = FALSE)
     }
-    
-    # Chargement des extracteurs
-    if (rjd3toolkit::get_java_version() >= rjd3toolkit::minimal_java_version) {
-        rjd3toolkit::reload_dictionaries()
-    }
-    
+        
     # Chargement des classes proto
     proto.dir <- system.file("proto", package = pkgname)
     RProtoBuf::readProtoFiles2(protoPath = proto.dir)
@@ -149,21 +151,19 @@ Dans le fichier zzz.R, on retrouve :
 }
 ```
 
-Le `.onLoad()` de {rjd3jars} et de {rjd3xjars} contient un warning par rapport à la version de Java:
+Le `.onLoad()` de {rjd3jars} contient un warning par rapport à la version de Java:
 
 ```r
 #' @importFrom rJava .jpackage
 .onLoad <- function(libname, pkgname) {
 	# Vérification de la version de Java
-    current_java_version <- get_java_version()
-    if (current_java_version < minimal_java_version) {
-        packageStartupMessage(sprintf(
-            "Your java version is %s. %s or higher is needed.",
-            current_java_version,
-            minimal_java_version
-        ))
+    has_java <- check_java_version()
+    
+    # Chargement des extracteurs
+    if (has_java) {
+        rjd3toolkit::reload_dictionaries()
     }
-	
+    
 	# Chargement des classes Java
     jars_inst <- file.path(libname, pkgname, "inst", "java") |>
         list.files(pattern = "\\.jar$", full.names = TRUE, all.files = TRUE)
@@ -221,7 +221,7 @@ Here are different scenarios that "attach" the package in the environment:
 But when should you attach a package, and when should you just load it?
 
 From a developer’s perspective, a dependency package should never be attached—only loaded.
-  
+
 ## What should be included in `.onAttach` and `.onLoad`?
 
 Ref: [R Packages](https://r-pkgs.org/code.html#sec-code-onLoad-onAttach)
@@ -246,7 +246,7 @@ Given that an R user could call a package without attaching it with `::` (exampl
 
 1) No to the error, because otherwise a user wouldn’t be able to install the package without having `Java >= 21`, and that’s not what we want. We want the user to still be able to install the package and, if necessary, update their Java later. Also, this would prevent the CRAN checks.
 
-2) No to `.onLoad()` because (as mentioned [here](https://r-pkgs.org/code.html#sec-code-onLoad-onAttach)), the purpose of `.onLoad()` is not to be verbose. If something doesn’t work, the user is notified in `.onAttach()` via `packageStartupMessage()`, and remember that `::` is an advanced feature and not necessarily for beginners.
+2) Yes for `.onLoad()` because any user should be able to use the package (with `library()` or with `::`).
 
 ## Dependencies
 
@@ -254,7 +254,7 @@ The R packages book page covers this topic well: https://r-pkgs.org/dependencies
 
 ### Imports vs Depends vs Suggests vs LinkingTo vs Enhances
 
-There are four ways to declare dependencies in R.
+There are five ways to declare dependencies in R.
 
 - **Depends**: lists the dependencies that **will be attached**. In principle, there is **no reason** to put packages in this section (the Imports section is preferred).
 - **Imports**: lists the dependencies the user needs to run the package. These packages **are installed and loaded** (“Loading”) at the same time as the main package.
@@ -264,7 +264,9 @@ There are four ways to declare dependencies in R.
 
 ### In zzz.R
 
-By default, dependency packages (in the **Imports** section of the DESCRIPTION file) are loaded (“Loading”) when the main package is loaded. Therefore, there is no need to manually reload a dependency package. If a dependency is missing, R will notify the user with the message:
+By default, dependency packages (in the **Imports** section of the DESCRIPTION file) are loaded ("Loading") when the main package is loaded (but only under certain conditions; see [discussion 161](https://github.com/rjdverse/rjd3toolkit/discussions/161)). Therefore, there is no need to manually reload a dependency package.
+
+If a dependency is missing, R will notify the user with the message:
 
 ```
 Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) :
@@ -273,7 +275,7 @@ there is no package called ‘rjd3toolkit’
 
 ## rjdverse Schema
 
-For the {rjd3x13} package, here is an excerpt from the DESCRIPTION file:
+For the {rjd3x13} package, here is an except from the DESCRIPTION file:
 
 ```
 Depends:
@@ -297,6 +299,11 @@ In the zzz.R file, we find:
 #' @importFrom rjd3toolkit get_java_version minimal_java_version
 #' @importFrom rjd3toolkit reload_dictionaries
 .onLoad <- function(libname, pkgname) {
+	# Loading dependency packages
+	if (!requireNamespace("rjd3toolkit", quietly = TRUE)) {
+		stop("Loading {rjd3toolkit} failed", call. = FALSE)
+	}
+	
     # Loading Java class
     jars_inst <- file.path(libname, pkgname, "inst", "java") |>
         list.files(pattern = "\\.jar$", full.names = TRUE, all.files = TRUE)
@@ -307,11 +314,6 @@ In the zzz.R file, we find:
     )
     if (!result) {
         stop("Loading java packages failed", call. = FALSE)
-    }
-    
-    # Loading extractors
-    if (rjd3toolkit::get_java_version() >= rjd3toolkit::minimal_java_version) {
-        rjd3toolkit::reload_dictionaries()
     }
     
     # Loading proto class
@@ -335,21 +337,19 @@ In the zzz.R file, we find:
 }
 ```
 
-The `.onLoad()` method in {rjd3jars} and {rjd3xjars} contains a warning regarding the Java version:
+The `.onLoad()` method in {rjd3jars} and contains a warning regarding the Java version:
 
 ```r
 #' @importFrom rJava .jpackage
 .onLoad <- function(libname, pkgname) {
 	# Check Java version
-    current_java_version <- get_java_version()
-    if (current_java_version < minimal_java_version) {
-        packageStartupMessage(sprintf(
-            "Your java version is %s. %s or higher is needed.",
-            current_java_version,
-            minimal_java_version
-        ))
+    has_java <- check_java_version()
+    
+    # Loading extractors
+    if (has_java) {
+        rjd3toolkit::reload_dictionaries()
     }
-	
+    
 	# Loading Java class
     jars_inst <- file.path(libname, pkgname, "inst", "java") |>
         list.files(pattern = "\\.jar$", full.names = TRUE, all.files = TRUE)
