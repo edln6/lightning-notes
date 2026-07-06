@@ -27,14 +27,16 @@ D'abord, il faut faire qqs vérifications sur le dernier commit de la branche de
 
 1. Les dépendances R ont bien été releasés ({rjd3toolkit}, {rjd3x13}...).
 2. Les JARS sont à jour (utiliser la GHA `update-java-dependencies`) à faire dans fork (PR)
-3. Le fichier NEWS.md est à jour (PR), (unreleased : pour l'instant à mettre à jour qd release github, apres le CRAN)
-4. Le numéro de version minimum des dépendances (Exemple `rjd3toolkit (>= 3.7.1)`): modifier fichier description (PR)
-   Lancer releaser::....
-6. Les GHA doivent être au vert :
+3. Dans le ficher description retirer le paragraphe Remotes (sera remis automatiquement pour release GitHub)
+4. Le fichier NEWS.md est à jour (PR), (unreleased : pour l'instant à mettre à jour qd release github, apres le CRAN)
+5. Le numéro de version minimum des dépendances (Exemple `rjd3toolkit (>= 3.7.1)`): modifier fichier description (PR)
+   (ou Lancer releaser::set_latest_deps_version
+   (fin des PR sur Fork)
+6. Les GHA ci-dessus vont tourner automatiquement sur le répertoire principal. Elles doivent être au vert pour mise sur CRAN :
 	- Linting
 	- R-CMD-Check 
 	- Check des links et du fichier NEWS.md (pas encore dans rjd3jars)
-7. [CRAN Checker](https://win-builder.r-project.org/upload.aspx) (Win builder) sur les machines du CRAN (ou `devtools::check_win_release()` et `devtools::check_win_oldrelease()`)
+7. Faire un build au format source du package (fichier.tar.gz) et upload pour check sur [CRAN Checker](https://win-builder.r-project.org/upload.aspx) ou bien utiliser devtools: (Win builder) sur les machines du CRAN (ou `devtools::check_win_release()` et `devtools::check_win_oldrelease()`)
 
 Si il y a un problème à un moment de la chaîne, on corrige et on recommence la chaîne de vérification (on retourne au point 1).
 Si aucun problème, 0 notes, 0 warnings, 0 errors alors on peut passer à la release !
