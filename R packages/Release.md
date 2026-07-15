@@ -31,12 +31,13 @@ D'abord, il faut faire qqs vérifications sur le dernier commit de la branche de
 4. Le fichier NEWS.md est à jour (PR), (unreleased : pour l'instant à mettre à jour qd release github, apres le CRAN)
 5. Le numéro de version minimum des dépendances (Exemple `rjd3toolkit (>= 3.7.1)`): modifier fichier description (PR)
    (ou Lancer releaser::set_latest_deps_version
+   Mettre à jour le numéro de version : passer de la version en cours de développement à la nouvelle version (Exemple passer de `3.6.1.9000` à `3.7.0` ou `4.0.0`)
    (fin des PR sur Fork)
-6. Les GHA ci-dessus vont tourner automatiquement sur le répertoire principal. Elles doivent être au vert pour mise sur CRAN :
+7. Les GHA ci-dessus vont tourner automatiquement sur le répertoire principal. Elles doivent être au vert pour mise sur CRAN :
 	- Linting
 	- R-CMD-Check 
 	- Check des links et du fichier NEWS.md (pas encore dans rjd3jars)
-7. Faire un build au format source du package (fichier.tar.gz) et upload pour check sur [CRAN Checker](https://win-builder.r-project.org/upload.aspx) ou bien utiliser devtools: (Win builder) sur les machines du CRAN (ou `devtools::check_win_release()` et `devtools::check_win_oldrelease()`)
+8. Faire un build au format source du package (fichier.tar.gz) et upload pour check sur [CRAN Checker](https://win-builder.r-project.org/upload.aspx) ou bien utiliser devtools: (Win builder) sur les machines du CRAN (ou `devtools::check_win_release()` et `devtools::check_win_oldrelease()`)
 
 Si il y a un problème à un moment de la chaîne, on corrige et on recommence la chaîne de vérification (on retourne au point 1).
 Si aucun problème, 0 notes, 0 warnings, 0 errors alors on peut passer à la release !
@@ -47,8 +48,8 @@ Si aucun problème, 0 notes, 0 warnings, 0 errors alors on peut passer à la rel
 
 Il faut d'abord faire la release CRAN et ensuite la release GitHub car si le CRAN a des retouches / commentaires sur le package, il faudra refaire une nouvelle release GitHub, modifier le tag / la précédente ou avoir une release GitHub différente de la release (pas acceptable).
 
-7) Récupérer le dernier commit de la branche develop
-8) Mettre à jour le numéro de version : passer de la version en cours de développement à la nouvelle version (Exemple passer de `3.6.1.9000` à `3.7.0` ou `4.0.0`)
+7) Etre à jour sur la branche develop
+
 9) Modifier le fichier cran-comments.md à partir du NEWS.md et commentaires additionnels pour les équipes du CRAN
 10) Construire le package au format source (`.tar.gz`)
 11) Soumettre le package sur le [site du CRAN]([https://cran.r-project.org/submit.html](https://cran.r-project.org/submit.html))
@@ -57,8 +58,6 @@ Il faut d'abord faire la release CRAN et ensuite la release GitHub car si le CRA
 13) Si les développeurs du CRAN vous disent que le package est accepté, alors il sera disponible sur le CRAN (d'abord au format source puis binaire).
 
 #### GitHub
-
-Après release sur le CRAN: maj de cran-comments.md et DESCRIPTION: merge into develop avec PR
 
 Pour faire la release et préparer le branche develop pour la prochaine version
 Sur GitHub, on fait appel à la nouvelle GHA `release.yaml` qui va prendre comme argument la branche sur laquelle on fait la release (ici develop) et le futur numéro de version puis exécuter les actions :
