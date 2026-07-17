@@ -61,13 +61,13 @@ Il faut d'abord faire la release CRAN et ensuite la release GitHub car si le CRA
 
 Pour faire la release et préparer le branche develop pour la prochaine version
 Sur GitHub, on fait appel à la nouvelle GHA `release.yaml` qui va prendre comme argument la branche sur laquelle on fait la release (ici develop) et le futur numéro de version puis exécuter les actions :
-	- Valider le nouveau numéro de version
-	- Mettre à jour le fichier DESCRIPTION (avec le nouveau numéro de version en developpement)
-	- Mettre à jour le fichier NEWS.md: Ajout d'une nouvelle section pour la release (unreleased=> release + develop + ajout de liens (comparer les versions))
-	- Création du nouveau tag de la release github
-	- Merge intermédiaire de main et develop
-	- Push des 2 branches et du nouveau tag
-	- Draft de la nouvelle release dans la partie `Releases` de GitHub
+- Valider le nouveau numéro de version
+- Mettre à jour le fichier DESCRIPTION (avec le nouveau numéro de version en developpement)
+- Mettre à jour le fichier NEWS.md: Ajout d'une nouvelle section pour la release (unreleased=> release + develop + ajout de liens (comparer les versions))
+- Création du nouveau tag de la release github
+- Merge intermédiaire de main et develop
+- Push des 2 branches et du nouveau tag
+- Draft de la nouvelle release dans la partie `Releases` de GitHub
 
 Il suffit d'accepter et de publier cette nouvelle release. Et tout est bon !
 
